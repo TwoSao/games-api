@@ -1,16 +1,10 @@
-require('dotenv').config();
-const express = require('express');
+const app = require('express')()
+const port = 8080
+const swaggerUi = require('swagger-ui-express')
+const swaggerDocument = require('./docs/swagger.json');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
-app.use(express.json());
-
-// Проверочный роут
-app.get('/', (req, res) => {
-    res.send('Games API is running!');
-});
-
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+app.listen(port, () => {
+    console.log(`API up at: http://localhost:${port}`)
+})
