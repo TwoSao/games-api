@@ -15,11 +15,15 @@ const games = [
     {id: 8, name: "Forza Horizon 5", price: 59.99}
 ]
 
-// Эндпоинт для получения списка всех игр
-app.get('/games', (req, res) => {
-    res.send(games)
-})
+app.get('/games/:id', (req, res) => {
+    // Проверяем, существует ли игра с индексом (id - 1)
+    if (typeof games[req.params.id - 1] === 'undefined') {
+        return res.status(404).send({ error: "Game not found" })
+    }
 
+    // Если игра найдена, отправляем её
+    res.send(games[req.params.id - 1])
+})
 // Эндпоинт для получения конкретной игры по её индексу
 app.get('/games/:id', (req, res) => {
     res.send(games[req.params.id])
