@@ -33,7 +33,18 @@ app.get('/games/:id', (req, res) => {
     }
     res.send(games[req.params.id - 1])
 })
+app.delete('/games/:id', (req, res) => {
+    // 1. Проверяем, существует ли игра по индексу (id - 1)
+    if (typeof games[req.params.id - 1] === 'undefined') {
+        return res.status(404).send({ error: "Game not found" })
+    }
 
+    // 2. Удаляем элемент из массива
+    games.splice(req.params.id - 1, 1)
+
+    // 3. Возвращаем 204 No Content
+    res.status(204).send()
+})
 // POST /games с валидацией и полным URL в заголовке Location
 app.post('/games', (req, res) => {
     const { name, price } = req.body

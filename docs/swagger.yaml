@@ -76,6 +76,7 @@ paths:
           examples:
             application/json:
               error: "Game with the same title already exists"
+
   /games/{id}:
     get:
       tags:
@@ -98,6 +99,27 @@ paths:
               id: 2
               name: Cyberpunk 2077
               price: 59.99
+        '404':
+          description: Game was not found in games array
+          schema:
+            $ref: '#/definitions/error'
+          examples:
+            application/json:
+              error: Game not found
+    delete:
+      tags:
+        - games
+      summary: Delete a game
+      description: Deletes a game from the array by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          description: ID of the game to delete
+      responses:
+        '204':
+          description: Game deleted successfully
         '404':
           description: Game was not found in games array
           schema:
