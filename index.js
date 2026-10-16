@@ -18,18 +18,33 @@ const games = [
     { id: 8, name: "Forza Horizon 5", price: 59.99 }
 ]
 
-// Глобальный счетчик для генерации уникальных ID
 let nextId = games.length > 0 ? Math.max(...games.map(g => g.id)) + 1 : 1
 
-// Вспомогательная функция для получения базового URL сервера
 const getBaseUrl = (req) => {
     return req.protocol + '://' + req.get('host')
 }
 
+// Middleware: проверку прав администратора проходят только пользователи с x-user-id = 1
+const isAdmin = (req, res, next) => {
+    const userId = parseInt(req.header('x-user-id'), 10)
+
+    if (isNaN(userId)) {
+        return res.status(401).send({ error: "Unauthorized: Missing or invalid x-user-id header" })
+    }
+
+    if (userId !== 1) {
+        return res.status(403).send({ error: "Access denied: Admin role required" })
+    }
+
+    next()
+}
+
+// GET /games — просмотр списка игр
 app.get('/games', (req, res) => {
     res.send(games)
 })
 
+// GET /games/:id — просмотр деталей игры
 app.get('/games/:id', (req, res) => {
     const id = parseInt(req.params.id, 10)
     if (isNaN(id)) {
@@ -44,21 +59,7 @@ app.get('/games/:id', (req, res) => {
     res.send(game)
 })
 
-app.delete('/games/:id', (req, res) => {
-    const id = parseInt(req.params.id, 10)
-    if (isNaN(id)) {
-        return res.status(400).send({ error: "Invalid ID format" })
-    }
-
-    const index = games.findIndex(g => g.id === id)
-    if (index === -1) {
-        return res.status(404).send({ error: "Game not found" })
-    }
-
-    games.splice(index, 1)
-    res.status(204).send()
-})
-
+// POST /games — добавление игры
 app.post('/games', (req, res) => {
     const { name, price } = req.body
 
@@ -88,8 +89,8 @@ app.post('/games', (req, res) => {
         .send(createdGame)
 })
 
-// PUT /games/:id — обновление имеющейся игры
-app.put('/games/:id', (req, res) => {
+// PUT /games/:id — обновление игры (ТОЛЬКО ДЛЯ АДМИНА)
+app.put('/games/:id', isAdmin, (req, res) => {
     const id = parseInt(req.params.id, 10)
     if (isNaN(id)) {
         return res.status(400).send({ error: "Invalid ID format" })
@@ -102,27 +103,39 @@ app.put('/games/:id', (req, res) => {
 
     const { name, price } = req.body
 
-    // 1. Проверка на отсутствие обязательных полей (400)
     if (!name || price === undefined || price === null) {
         return res.status(400).send({ error: "One or more required fields are missing" })
     }
 
-    // 2. Проверка невалидных значений (400)
     if (typeof name !== 'string' || typeof price !== 'number' || isNaN(price) || price < 0) {
         return res.status(400).send({ error: "Invalid game parameter values" })
     }
 
-    // 3. Проверка на совпадение названия с ДРУГОЙ игрой (409 Conflict)
     const gameExists = games.some(g => g.id !== id && g.name.toLowerCase() === name.trim().toLowerCase())
     if (gameExists) {
         return res.status(409).send({ error: "Game with the same title already exists" })
     }
 
-
     game.name = name.trim()
     game.price = price
 
     res.send(game)
+})
+
+// DELETE /games/:id — удаление игры (ТОЛЬКО ДЛЯ АДМИНА)
+app.delete('/games/:id', isAdmin, (req, res) => {
+    const id = parseInt(req.params.id, 10)
+    if (isNaN(id)) {
+        return res.status(400).send({ error: "Invalid ID format" })
+    }
+
+    const index = games.findIndex(g => g.id === id)
+    if (index === -1) {
+        return res.status(404).send({ error: "Game not found" })
+    }
+
+    games.splice(index, 1)
+    res.status(204).send()
 })
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
