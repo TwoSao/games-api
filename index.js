@@ -24,7 +24,19 @@ const getBaseUrl = (req) => {
     return req.protocol + '://' + req.get('host')
 }
 
-// Middleware: проверку прав администратора проходят только пользователи с x-user-id = 1
+// Middleware: проверка авторизации (требуется x-user-id: 1 или 2)
+const isAuthenticated = (req, res, next) => {
+    const userId = parseInt(req.header('x-user-id'), 10)
+
+    if (isNaN(userId)) {
+        return res.status(401).send({ error: "Unauthorized: Missing or invalid x-user-id header" })
+    }
+
+    req.userId = userId
+    next()
+}
+
+// Middleware: проверка прав администратора (требуется x-user-id: 1)
 const isAdmin = (req, res, next) => {
     const userId = parseInt(req.header('x-user-id'), 10)
 
@@ -39,12 +51,12 @@ const isAdmin = (req, res, next) => {
     next()
 }
 
-// GET /games — просмотр списка игр
+// GET /games — просматривать могут ВСЕ (включая гостя)
 app.get('/games', (req, res) => {
     res.send(games)
 })
 
-// GET /games/:id — просмотр деталей игры
+// GET /games/:id — просматривать могут ВСЕ (включая гостя)
 app.get('/games/:id', (req, res) => {
     const id = parseInt(req.params.id, 10)
     if (isNaN(id)) {
@@ -59,8 +71,8 @@ app.get('/games/:id', (req, res) => {
     res.send(game)
 })
 
-// POST /games — добавление игры
-app.post('/games', (req, res) => {
+// POST /games — добавлять может ЛЮБОЙ авторизованный пользователь (Юзер и Админ)
+app.post('/games', isAuthenticated, (req, res) => {
     const { name, price } = req.body
 
     if (!name || price === undefined || price === null) {
@@ -89,7 +101,7 @@ app.post('/games', (req, res) => {
         .send(createdGame)
 })
 
-// PUT /games/:id — обновление игры (ТОЛЬКО ДЛЯ АДМИНА)
+// PUT /games/:id — обновлять может ТОЛЬКО Админ
 app.put('/games/:id', isAdmin, (req, res) => {
     const id = parseInt(req.params.id, 10)
     if (isNaN(id)) {
@@ -122,7 +134,7 @@ app.put('/games/:id', isAdmin, (req, res) => {
     res.send(game)
 })
 
-// DELETE /games/:id — удаление игры (ТОЛЬКО ДЛЯ АДМИНА)
+// DELETE /games/:id — удалять может ТОЛЬКО Админ
 app.delete('/games/:id', isAdmin, (req, res) => {
     const id = parseInt(req.params.id, 10)
     if (isNaN(id)) {

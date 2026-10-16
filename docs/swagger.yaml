@@ -6,8 +6,9 @@ info:
     ### Games API Documentation
 
     Use the **Authorize** button to send `x-user-id` header (`1` for Admin, `2` for Regular User).
-    - Anyone can view (`GET`) and add (`POST`) games.
-    - Only Admin (`x-user-id: 1`) can update (`PUT`) or delete (`DELETE`) games.
+    - **Guest (No header):** View games (`GET`)
+    - **User (`x-user-id: 2`):** View (`GET`) and create games (`POST`)
+    - **Admin (`x-user-id: 1`):** Full access (`GET`, `POST`, `PUT`, `DELETE`)
 
 securityDefinitions:
   UserIdAuth:
@@ -22,7 +23,7 @@ paths:
       tags:
         - games
       summary: Get a list of all games
-      description: Returns a list of all games in API
+      description: Returns a list of all games in API (Public access)
       responses:
         '200':
           description: Returns a list of games
@@ -34,8 +35,10 @@ paths:
     post:
       tags:
         - games
-      summary: Creates a game
-      description: Creates a new game
+      summary: Creates a game (Authenticated Users)
+      description: Creates a new game. Requires x-user-id header.
+      security:
+        - UserIdAuth: []
       parameters:
         - in: body
           name: body
@@ -56,6 +59,10 @@ paths:
           description: Missing required fields or invalid parameter values
           schema:
             $ref: '#/definitions/error'
+        '401':
+          description: Unauthorized (Missing or invalid x-user-id header)
+          schema:
+            $ref: '#/definitions/error'
         '409':
           description: Game with the same title already exists
           schema:
@@ -66,7 +73,7 @@ paths:
       tags:
         - games
       summary: Get full details of a given game
-      description: Returns full details of a given game by ID
+      description: Returns full details of a given game by ID (Public access)
       parameters:
         - name: id
           in: path
@@ -91,7 +98,7 @@ paths:
       tags:
         - games
       summary: Update a game (Admin only)
-      description: Updates an existing game by ID
+      description: Updates an existing game by ID. Admin only.
       security:
         - UserIdAuth: []
       parameters:
@@ -136,7 +143,7 @@ paths:
       tags:
         - games
       summary: Delete a game (Admin only)
-      description: Deletes a game from the array by ID
+      description: Deletes a game from the array by ID. Admin only.
       security:
         - UserIdAuth: []
       parameters:
