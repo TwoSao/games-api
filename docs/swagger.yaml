@@ -1,0 +1,158 @@
+swagger: '2.0'
+info:
+  title: Games API
+  description: |
+    ### This is a Swagger UI for our Games API 
+
+    ### Error handling
+    Errors are presented using the HTTP status codes 400-599. The response include a more detailed explanation about the error in the body.
+
+    ```
+    {
+      "error": "Cleartext explanation of the error that occurred"
+    }
+    ```
+
+    ### Generic API errors
+    These error responses can be returned by any of the described endpoints.
+
+    | HTTP status  |  Description |
+    |---|---|
+    | 400| Bad input parameters or invalid request. More information can be found in the response body.
+    | 401| The consumer does not have access to the requested resource or the provided token is not valid.
+    | 404| The requested resource can not be found or the user does not have access to the resource.
+    | 5XX| A server error has occurred while processing the request.
+
+paths:
+  /games:
+    get:
+      tags:
+        - games
+      summary: Get a list of all games
+      description: Returns a list of all games in API
+      responses:
+        '200':
+          description: Returns a list of games
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Game'
+    post:
+      tags:
+        - games
+      summary: Creates a game
+      description: Creates a new game
+      parameters:
+        - in: body
+          name: body
+          description: A new game to be created
+          required: true
+          schema:
+            $ref: '#/definitions/NewGame'
+      responses:
+        '201':
+          description: Game created successfully
+          headers:
+            Location:
+              type: string
+              description: URL of the newly created game
+          schema:
+            $ref: '#/definitions/Game'
+        '400':
+          description: Missing required fields or invalid parameter values
+          schema:
+            $ref: '#/definitions/error'
+          examples:
+            missing_fields:
+              value:
+                error: "One or more required fields are missing"
+            invalid_values:
+              value:
+                error: "Invalid game parameter values"
+        '409':
+          description: Game with the same title already exists
+          schema:
+            $ref: '#/definitions/error'
+          examples:
+            application/json:
+              error: "Game with the same title already exists"
+
+  /games/{id}:
+    get:
+      tags:
+        - games
+      summary: Get full details of a given game
+      description: Returns full details of a given game by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          description: ID of the game
+      responses:
+        '200':
+          description: Full details of a given game
+          schema:
+            $ref: '#/definitions/Game'
+          examples:
+            application/json:
+              id: 2
+              name: Cyberpunk 2077
+              price: 59.99
+        '404':
+          description: Game was not found in games array
+          schema:
+            $ref: '#/definitions/error'
+          examples:
+            application/json:
+              error: Game not found
+    delete:
+      tags:
+        - games
+      summary: Delete a game
+      description: Deletes a game from the array by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          description: ID of the game to delete
+      responses:
+        '204':
+          description: Game deleted successfully
+        '404':
+          description: Game was not found in games array
+          schema:
+            $ref: '#/definitions/error'
+          examples:
+            application/json:
+              error: Game not found
+
+definitions:
+  Game:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      price:
+        type: number
+  NewGame:
+    type: object
+    required:
+      - name
+      - price
+    properties:
+      name:
+        type: string
+        example: "Tetris"
+      price:
+        type: number
+        format: float
+        example: 0.99
+  error:
+    type: object
+    properties:
+      error:
+        type: string
