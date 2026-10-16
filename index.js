@@ -118,7 +118,7 @@ app.put('/games/:id', (req, res) => {
         return res.status(409).send({ error: "Game with the same title already exists" })
     }
 
-    // Обновляем данные
+
     game.name = name.trim()
     game.price = price
 
