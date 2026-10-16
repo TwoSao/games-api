@@ -8,15 +8,18 @@ const swaggerDocument = YAML.load('./docs/swagger.yaml')
 app.use(express.json())
 
 const games = [
-    {id: 1, name: "Witcher 3", price: 29.99},
-    {id: 2, name: "Cyberpunk 2077", price: 59.99},
-    {id: 3, name: "Minecraft", price: 26.99},
-    {id: 4, name: "Counter-Strike: Global Offensive", price: 0},
-    {id: 5, name: "Roblox", price: 0},
-    {id: 6, name: "Grand Theft Auto V", price: 29.99},
-    {id: 7, name: "Valorant", price: 0},
-    {id: 8, name: "Forza Horizon 5", price: 59.99}
+    { id: 1, name: "Witcher 3", price: 29.99 },
+    { id: 2, name: "Cyberpunk 2077", price: 59.99 },
+    { id: 3, name: "Minecraft", price: 26.99 },
+    { id: 4, name: "Counter-Strike: Global Offensive", price: 0 },
+    { id: 5, name: "Roblox", price: 0 },
+    { id: 6, name: "Grand Theft Auto V", price: 29.99 },
+    { id: 7, name: "Valorant", price: 0 },
+    { id: 8, name: "Forza Horizon 5", price: 59.99 }
 ]
+
+// Глобальный счетчик для генерации уникальных ID
+let nextId = games.length > 0 ? Math.max(...games.map(g => g.id)) + 1 : 1
 
 // Вспомогательная функция для получения базового URL сервера
 const getBaseUrl = (req) => {
@@ -28,23 +31,36 @@ app.get('/games', (req, res) => {
 })
 
 app.get('/games/:id', (req, res) => {
-    if (typeof games[req.params.id - 1] === 'undefined') {
+    const id = parseInt(req.params.id, 10)
+    if (isNaN(id)) {
+        return res.status(400).send({ error: "Invalid ID format" })
+    }
+
+    const game = games.find(g => g.id === id)
+    if (!game) {
         return res.status(404).send({ error: "Game not found" })
     }
-    res.send(games[req.params.id - 1])
+
+    res.send(game)
 })
+
 app.delete('/games/:id', (req, res) => {
-    // 1. Проверяем, существует ли игра по индексу (id - 1)
-    if (typeof games[req.params.id - 1] === 'undefined') {
+    const id = parseInt(req.params.id, 10)
+    if (isNaN(id)) {
+        return res.status(400).send({ error: "Invalid ID format" })
+    }
+
+    const index = games.findIndex(g => g.id === id)
+    if (index === -1) {
         return res.status(404).send({ error: "Game not found" })
     }
 
-    // 2. Удаляем элемент из массива
-    games.splice(req.params.id - 1, 1)
+    // Удаляем элемент по его реальному индексу в массиве
+    games.splice(index, 1)
 
-    // 3. Возвращаем 204 No Content
     res.status(204).send()
 })
+
 // POST /games с валидацией и полным URL в заголовке Location
 app.post('/games', (req, res) => {
     const { name, price } = req.body
@@ -55,7 +71,6 @@ app.post('/games', (req, res) => {
     }
 
     // 2. Проверка на невалидные значения параметров (400)
-    // (например, если имя не строка, цена не число или отрицательная)
     if (typeof name !== 'string' || typeof price !== 'number' || isNaN(price) || price < 0) {
         return res.status(400).send({ error: "Invalid game parameter values" })
     }
@@ -66,9 +81,9 @@ app.post('/games', (req, res) => {
         return res.status(409).send({ error: "Game with the same title already exists" })
     }
 
-    // 4. Успешное создание (201 Created)
+    // 4. Успешное создание с уникальным ID (201 Created)
     const createdGame = {
-        id: games.length + 1,
+        id: nextId++,
         name: name.trim(),
         price: price
     }
@@ -79,6 +94,7 @@ app.post('/games', (req, res) => {
         .location(`${getBaseUrl(req)}/games/${createdGame.id}`)
         .send(createdGame)
 })
+
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
 app.listen(port, () => {
