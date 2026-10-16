@@ -40,25 +40,15 @@ paths:
     post:
       tags:
         - games
-      summary: Add a new game
-      description: Creates a new game in the API
+      summary: Creates a game
+      description: Creates a new game
       parameters:
         - in: body
           name: body
+          description: A new game to be created
           required: true
-          description: Game object that needs to be added
           schema:
-            type: object
-            required:
-              - name
-              - price
-            properties:
-              name:
-                type: string
-                example: "Tetris"
-              price:
-                type: number
-                example: 0.99
+            $ref: '#/definitions/NewGame'
       responses:
         '201':
           description: Game created successfully
@@ -69,10 +59,23 @@ paths:
           schema:
             $ref: '#/definitions/Game'
         '400':
-          description: Missing required fields (name or price)
+          description: Missing required fields or invalid parameter values
           schema:
             $ref: '#/definitions/error'
-
+          examples:
+            missing_fields:
+              value:
+                error: "One or more required fields are missing"
+            invalid_values:
+              value:
+                error: "Invalid game parameter values"
+        '409':
+          description: Game with the same title already exists
+          schema:
+            $ref: '#/definitions/error'
+          examples:
+            application/json:
+              error: "Game with the same title already exists"
   /games/{id}:
     get:
       tags:
@@ -113,6 +116,19 @@ definitions:
         type: string
       price:
         type: number
+  NewGame:
+    type: object
+    required:
+      - name
+      - price
+    properties:
+      name:
+        type: string
+        example: "Tetris"
+      price:
+        type: number
+        format: float
+        example: 0.99
   error:
     type: object
     properties:

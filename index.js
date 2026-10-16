@@ -36,27 +36,38 @@ app.get('/games/:id', (req, res) => {
 
 // POST /games с валидацией и полным URL в заголовке Location
 app.post('/games', (req, res) => {
-    // Валидация: проверяем наличие имени и цены
-    if (!req.body.name || !req.body.price) {
+    const { name, price } = req.body
+
+    // 1. Проверка на отсутствие обязательных параметров (400)
+    if (!name || price === undefined || price === null) {
         return res.status(400).send({ error: "One or more required fields are missing" })
     }
 
-    // Создаем объект игры
-    const createdGame = {
-        id: games.length + 1,
-        name: req.body.name,
-        price: req.body.price
+    // 2. Проверка на невалидные значения параметров (400)
+    // (например, если имя не строка, цена не число или отрицательная)
+    if (typeof name !== 'string' || typeof price !== 'number' || isNaN(price) || price < 0) {
+        return res.status(400).send({ error: "Invalid game parameter values" })
     }
 
-    // Добавляем игру в массив
+    // 3. Проверка на существование игры с таким же названием (409 Conflict)
+    const gameExists = games.some(game => game.name.toLowerCase() === name.trim().toLowerCase())
+    if (gameExists) {
+        return res.status(409).send({ error: "Game with the same title already exists" })
+    }
+
+    // 4. Успешное создание (201 Created)
+    const createdGame = {
+        id: games.length + 1,
+        name: name.trim(),
+        price: price
+    }
+
     games.push(createdGame)
 
-    // Формируем ответ с кодом 201 Created, заголовком Location и объектом игры
     res.status(201)
         .location(`${getBaseUrl(req)}/games/${createdGame.id}`)
         .send(createdGame)
 })
-
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
 app.listen(port, () => {
