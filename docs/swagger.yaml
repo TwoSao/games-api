@@ -37,6 +37,41 @@ paths:
             type: array
             items:
               $ref: '#/definitions/Game'
+    post:
+      tags:
+        - games
+      summary: Add a new game
+      description: Creates a new game in the API
+      parameters:
+        - in: body
+          name: body
+          required: true
+          description: Game object that needs to be added
+          schema:
+            type: object
+            required:
+              - name
+              - price
+            properties:
+              name:
+                type: string
+                example: "Tetris"
+              price:
+                type: number
+                example: 0.99
+      responses:
+        '201':
+          description: Game created successfully
+          headers:
+            Location:
+              type: string
+              description: URL of the newly created game
+          schema:
+            $ref: '#/definitions/Game'
+        '400':
+          description: Missing required fields (name or price)
+          schema:
+            $ref: '#/definitions/error'
 
   /games/{id}:
     get:
