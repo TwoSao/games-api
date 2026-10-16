@@ -55,33 +55,26 @@ app.delete('/games/:id', (req, res) => {
         return res.status(404).send({ error: "Game not found" })
     }
 
-    // Удаляем элемент по его реальному индексу в массиве
     games.splice(index, 1)
-
     res.status(204).send()
 })
 
-// POST /games с валидацией и полным URL в заголовке Location
 app.post('/games', (req, res) => {
     const { name, price } = req.body
 
-    // 1. Проверка на отсутствие обязательных параметров (400)
     if (!name || price === undefined || price === null) {
         return res.status(400).send({ error: "One or more required fields are missing" })
     }
 
-    // 2. Проверка на невалидные значения параметров (400)
     if (typeof name !== 'string' || typeof price !== 'number' || isNaN(price) || price < 0) {
         return res.status(400).send({ error: "Invalid game parameter values" })
     }
 
-    // 3. Проверка на существование игры с таким же названием (409 Conflict)
     const gameExists = games.some(game => game.name.toLowerCase() === name.trim().toLowerCase())
     if (gameExists) {
         return res.status(409).send({ error: "Game with the same title already exists" })
     }
 
-    // 4. Успешное создание с уникальным ID (201 Created)
     const createdGame = {
         id: nextId++,
         name: name.trim(),
@@ -93,6 +86,43 @@ app.post('/games', (req, res) => {
     res.status(201)
         .location(`${getBaseUrl(req)}/games/${createdGame.id}`)
         .send(createdGame)
+})
+
+// PUT /games/:id — обновление имеющейся игры
+app.put('/games/:id', (req, res) => {
+    const id = parseInt(req.params.id, 10)
+    if (isNaN(id)) {
+        return res.status(400).send({ error: "Invalid ID format" })
+    }
+
+    const game = games.find(g => g.id === id)
+    if (!game) {
+        return res.status(404).send({ error: "Game not found" })
+    }
+
+    const { name, price } = req.body
+
+    // 1. Проверка на отсутствие обязательных полей (400)
+    if (!name || price === undefined || price === null) {
+        return res.status(400).send({ error: "One or more required fields are missing" })
+    }
+
+    // 2. Проверка невалидных значений (400)
+    if (typeof name !== 'string' || typeof price !== 'number' || isNaN(price) || price < 0) {
+        return res.status(400).send({ error: "Invalid game parameter values" })
+    }
+
+    // 3. Проверка на совпадение названия с ДРУГОЙ игрой (409 Conflict)
+    const gameExists = games.some(g => g.id !== id && g.name.toLowerCase() === name.trim().toLowerCase())
+    if (gameExists) {
+        return res.status(409).send({ error: "Game with the same title already exists" })
+    }
+
+    // Обновляем данные
+    game.name = name.trim()
+    game.price = price
+
+    res.send(game)
 })
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))

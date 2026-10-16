@@ -99,6 +99,10 @@ paths:
               id: 2
               name: Cyberpunk 2077
               price: 59.99
+        '400':
+          description: Invalid ID format
+          schema:
+            $ref: '#/definitions/error'
         '404':
           description: Game was not found in games array
           schema:
@@ -106,6 +110,40 @@ paths:
           examples:
             application/json:
               error: Game not found
+    put:
+      tags:
+        - games
+      summary: Update a game
+      description: Updates an existing game by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+          description: ID of the game to update
+        - in: body
+          name: body
+          description: Game object with updated data
+          required: true
+          schema:
+            $ref: '#/definitions/NewGame'
+      responses:
+        '200':
+          description: Game updated successfully
+          schema:
+            $ref: '#/definitions/Game'
+        '400':
+          description: Invalid ID format, missing required fields or invalid parameter values
+          schema:
+            $ref: '#/definitions/error'
+        '404':
+          description: Game was not found
+          schema:
+            $ref: '#/definitions/error'
+        '409':
+          description: Game with the same title already exists
+          schema:
+            $ref: '#/definitions/error'
     delete:
       tags:
         - games
@@ -120,6 +158,10 @@ paths:
       responses:
         '204':
           description: Game deleted successfully
+        '400':
+          description: Invalid ID format
+          schema:
+            $ref: '#/definitions/error'
         '404':
           description: Game was not found in games array
           schema:
@@ -146,11 +188,11 @@ definitions:
     properties:
       name:
         type: string
-        example: "Tetris"
+        example: "Witcher 3: Wild Hunt"
       price:
         type: number
         format: float
-        example: 0.99
+        example: 19.99
   error:
     type: object
     properties:
